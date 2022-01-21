@@ -6,7 +6,7 @@
 #' @param termination_year Single integer. Year of drought termination.
 #' @return a tibble of storage target levels by week
 #' @importFrom tibble tibble
-#' @importFrom dplyr mutate filter pull case_when select
+#' @importFrom dplyr mutate filter pull case_when select left_join
 #' @importFrom parsnip linear_reg set_engine fit
 #' @importFrom purrr map_dfr map_dbl
 #' @export
@@ -54,7 +54,7 @@ create_droughtshift_object <- function(droughtshift_input, drought_years, termin
     }) -> fitted_rr_lines
 
   ds_trans %>%
-    left_join(fitted_rr_lines) %>%
+    left_join(fitted_rr_lines, by = "status") %>%
     mutate(flow_trans_prd = precip * slope + intercept) %>%
     select(water_year, precip, flow, status, flow_trans, flow_trans_prd) ->
     ds_flow_and_predictions

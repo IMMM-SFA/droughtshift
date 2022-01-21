@@ -1,0 +1,48 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%",
+  warning = FALSE
+)
+```
+
+# droughtshift
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+## Installation
+
+``` r
+devtools::install_github("IMMM-SFA/droughtshift")
+```
+
+## Usage
+
+```{r}
+library(droughtshift)
+
+# load example input data:
+generate_example_droughtshift_input() -> ds_input
+
+head(ds_input)
+
+# create a droughtshift object
+create_droughtshift_object(ds_input) -> ds_object
+
+# plot the droughtshift object
+plot_droughtshift_object(ds_object)
+
+
+```
+
+
+

@@ -48,8 +48,10 @@ plot_droughtshift_object <- function(droughtshift_object){
 
   plot_grid(main_plot,
             plot_grid(
+              NA,
               robustness_plot_1,
-              robustness_plot_2, ncol =1
-              )
+              robustness_plot_2,
+              NA, ncol =1, rel_heights = c(0.1, 0.4, 0.4, 0.1)
+              ), rel_widths = c(0.7, 0.3)
             )
 }

@@ -35,3 +35,11 @@ generate_example_droughtshift_input <- function(){
     2021L, 719, 10.8, "post-drought"
   )
 }
+
+
+## plotting palette
+ds_pal <-
+  c("drought" = "darkorange",
+    "pre-drought" = "grey",
+    "post-drought" = "dodgerblue",
+    "termination" = "black")

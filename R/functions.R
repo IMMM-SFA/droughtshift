@@ -6,7 +6,7 @@
 #' @param termination_year Single integer. Year of drought termination.
 #' @return a tibble of storage target levels by week
 #' @importFrom tibble tibble
-#' @importFrom dplyr mutate filter pull case_when
+#' @importFrom dplyr mutate filter pull case_when select
 #' @importFrom parsnip linear_reg set_engine fit
 #' @importFrom purrr map_dfr map_dbl
 #' @export
@@ -36,44 +36,31 @@ create_droughtshift_object <- function(droughtshift_input, drought_years, termin
   # set a slope
   lm_all_years$fit$coefficients[[2]] -> fixed_slope
 
-  linear_reg() %>%
-    set_engine("lm") %>%
-    fit(flow_trans - fixed_slope * precip ~ 1,
-        data = ds_trans %>%
-          filter(status == "pre-drought") %>%
-          mutate(fixed_slope = !!fixed_slope)) %>%
-    .[["fit"]] %>% .[["coefficients"]] %>% .[[1]] ->
-    intercept_pre_drought
+  # find the intercepts for each status
+  pull(ds_trans, status) %>% unique() %>% .[!grepl("termination", .)] %>%
+    map_dfr(function(wy_status){
+      linear_reg() %>%
+        set_engine("lm") %>%
+        fit(flow_trans - fixed_slope * precip ~ 1,
+            data = ds_trans %>%
+              filter(status == !!wy_status) %>%
+              mutate(fixed_slope = !!fixed_slope)) %>%
+        .[["fit"]] %>% .[["coefficients"]] %>% .[[1]] ->
+        intercept
 
-  linear_reg() %>%
-    set_engine("lm") %>%
-    fit(flow_trans - fixed_slope * precip ~ 1,
-        data = ds_trans %>%
-          filter(status == "drought") %>%
-          mutate(fixed_slope = !!fixed_slope)) %>%
-    .[["fit"]] %>% .[["coefficients"]] %>% .[[1]] ->
-    intercept_in_drought
-
-  linear_reg() %>%
-    set_engine("lm") %>%
-    fit(flow_trans - fixed_slope * precip ~ 1,
-        data = ds_trans %>%
-          filter(status == "post-drought") %>%
-          mutate(fixed_slope = !!fixed_slope)) %>%
-    .[["fit"]] %>% .[["coefficients"]] %>% .[[1]] ->
-    intercept_post_drought
+      tibble(status = !!wy_status,
+             slope = !!fixed_slope,
+             intercept = !!intercept)
+    }) -> fitted_rr_lines
 
   ds_trans %>%
-    mutate(flow_trans_prd = case_when(
-      status == "pre-drought" ~
-        precip * fixed_slope + intercept_pre_drought,
-      status == "drought" ~
-        precip * fixed_slope + intercept_in_drought,
-      status == "post-drought" ~
-        precip * fixed_slope + intercept_post_drought
-    )) -> ds_flow_and_predictions
+    left_join(fitted_rr_lines) %>%
+    mutate(flow_trans_prd = precip * slope + intercept) %>%
+    select(water_year, precip, flow, status, flow_trans, flow_trans_prd) ->
+    ds_flow_and_predictions
 
-  # bootstrap the ...
+
+  # bootstrap the intercepts
   ds_trans %>% pull(status) %>% unique() %>%
     .[!grepl("termination", .)] %>%
     map_dfr(function(period){
